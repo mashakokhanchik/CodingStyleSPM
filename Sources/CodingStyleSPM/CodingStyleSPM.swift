@@ -5,9 +5,7 @@ import Foundation
 public struct CodingStyleSPM {
     
     public enum Style: String {
-        case camelCase = ""
-        case snakeCase = "_"
-        case kebabCase = "-"
+        case camelCase, snakeCase, kebabCase
     }
     
     // MARK: - Properties
@@ -23,6 +21,28 @@ public struct CodingStyleSPM {
         }
     }
     
+    private static let codingCase: [Style: (String) -> String] = [
+        .camelCase: { value in
+            let value = value.lowercased()
+                .split(separator: " ")
+                .drop { $0.isEmpty }
+                .map { $0.prefix(1).uppercased()+$0.dropFirst() }
+                .joined()
+            return value.prefix(1).lowercased()+value.dropFirst()
+        },
+        .snakeCase: { value in
+            value.lowercased()
+                .split(separator: " ")
+                .drop { $0.isEmpty }
+                .joined(separator: "-")
+        },
+        .kebabCase: { value in value.lowercased()
+                .split(separator: " ")
+                .drop { $0.isEmpty }
+                .joined(separator: "_")
+        }
+    ]
+    
     // MARK: - Inits
     
     public init(wrappedValue: String, style: Style) {
@@ -33,31 +53,12 @@ public struct CodingStyleSPM {
     // MARK: - Private methods
     
     private func get() -> String {
-        return format(value)
+        guard let coding = CodingStyleSPM.codingCase[style] else { return value }
+        return coding(value)
     }
     
     private mutating func set(_ newValue: String) {
         self.value = newValue
     }
-    
-    private func format(_ string: String) -> String {
-         var tmpString = string
-            .replacingOccurrences(of: Style.snakeCase.rawValue, with: " ")
-            .replacingOccurrences(of: Style.kebabCase.rawValue, with: " ")
-            .lowercased()
-        
-        var array = tmpString
-            .split(separator: " ")
-            .map { String($0) }
-        
-        if style == .camelCase {
-            array = array.map { $0.capitalized }
-            if !array.isEmpty {
-                array[0] = array[0].lowercased()
-            }
-        }
-        
-        tmpString = array.joined(separator: style.rawValue)
-        return tmpString
-    }
+
 }
